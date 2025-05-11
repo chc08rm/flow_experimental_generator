@@ -1,3 +1,3 @@
-,mixer_loc,mixer_type,t_diam,res_time
-0,"['N1C(Cl)=CC(=C(C=1)Br)Cl', 'CCCC[Li]']",T-mixer,500,1.0
-1,"['intermediate', 'C[Si](C)(C)Cl']",T-mixer,500,6.0
+mixer_loc,mixer_type,t_diam,res_time
+"['N1C(Cl)=CC(=C(C=1)Br)Cl', 'CCCC[Li]']",T-mixer,500,1.0
+"['intermediate', 'C[Si](C)(C)Cl']",T-mixer,500,6.0

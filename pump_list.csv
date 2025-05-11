@@ -1,4 +1,4 @@
-,reagent_id,solvent,concentration,flow_rate
-0,N1C(Cl)=CC(=C(C=1)Br)Cl,THF,0.3,17
-1,CCCC[Li],Hexane,1.6,3.5
-2,C[Si](C)(C)Cl,THF,1,6.12
+reagent_id,solvent,concentration,flow_rate
+N1C(Cl)=CC(=C(C=1)Br)Cl,THF,0.3,17
+CCCC[Li],Hexane,1.6,3.5
+C[Si](C)(C)Cl,THF,1,6.12
