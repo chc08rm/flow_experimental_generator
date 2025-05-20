@@ -86,11 +86,10 @@ def question_list():
     else:
         aux_params["collection_mode"]="UNSPECIFIED"
     aux_params=pd.DataFrame([aux_params])
-    global reaction
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
-    reaction.to_csv(f"{filename}.csv")     
+    reaction.to_csv(f"{filename}.csv")
+    return reaction     
 def temperature(reaction):
-    global t_list
     t_list=[]
     for n in range(0, reaction.shape[0]):
         if pd.isnull(reaction.iloc[n]["t_int"]):
@@ -98,16 +97,25 @@ def temperature(reaction):
         else:
             t_list.append(f"at a bath T of {reaction.iloc[n]["t_ext"]}°C, with an in-line T of {reaction.iloc[n]["t_int"]}°C")
     t_list[0]=" "
-def prep_gen(reaction):
+    return t_list
+def prep_gen(reaction, t_list):
     print("In a flow reactor were combined",end=" ")
     print(f"""{reaction.iloc[0]["reagent_id"]} ({reaction.iloc[0]["reagent_eq"]} eq., {reaction.iloc[0]["concentration"]}M in {reaction.iloc[0]["solvent"]}) dosed in at a flow rate of {reaction.iloc[0]["flow_rate"]} mL min⁻¹ and {reaction.iloc[1]["reagent_id"]} ({reaction.iloc[1]["reagent_eq"]} eq., {reaction.iloc[1]["concentration"]}M in {reaction.iloc[1]["solvent"]}) dosed in at a flow rate of {reaction.iloc[1]["flow_rate"]} mL min⁻¹""", end=" ")
-    #Mixer parameters for streams 1 and 2
-    if reaction.iloc[1]['mixer_type']=="T-mixer":
-        print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, {t_list[1]}, prior to being""", end=" ")
-    elif reaction.iloc[1]['mixer_type']=="CSTR":
-        print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
-    else:
-        print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
+    #Mixer parameters for streams 1 and 2, with a logic to catch 2-pump streams.
+    if reaction.shape[0]==2:
+        if reaction.iloc[1]['mixer_type']=="T-mixer":
+            print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, {t_list[1]}, prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
+        elif reaction.iloc[1]['mixer_type']=="CSTR":
+            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
+        else:
+            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
+    elif reaction.shape[0]>2:    
+        if reaction.iloc[1]['mixer_type']=="T-mixer":
+            print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, {t_list[1]}, prior to being""", end=" ")
+        elif reaction.iloc[1]['mixer_type']=="CSTR":
+            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
+        else:
+            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
     #now repeat for all other reagents and pumps in the flow. 
     for n in range(2, reaction.shape[0]):
         print(f"""combined with {reaction.iloc[n]["reagent_id"]} ({reaction.iloc[n]["reagent_eq"]} eq.,{reaction.iloc[n]["concentration"]}M in {reaction.iloc[n]["solvent"]}) dosed in at a flow rate of {reaction.iloc[n]["flow_rate"]} mL min⁻¹""", end=" ")
@@ -136,11 +144,13 @@ if start == True:
     filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
     reaction=pd.read_csv(f"{filename}")
     while "reagent_id" not in reaction.columns:
-        f_name=questionary.path("This CSV is not formatted correctly. Try again.", validate=lambda text: True if ".csv" in text           else "Please choose a valid file type.").ask()
+        f_name=questionary.path("This CSV is not formatted correctly. Try another file.", validate=lambda text: True if ".csv" in text           else "Please choose a valid file type.").ask()
+        reaction=pd.read_csv(f"{f_name}")
 if start == False:
-    question_list()
+    reaction=question_list()
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 #Here's the output
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-temperature(reaction)
-prep_gen(reaction)
+t_list=temperature(reaction)
+output=prep_gen(reaction, t_list)
+print(output)
