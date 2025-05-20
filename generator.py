@@ -108,7 +108,7 @@ def prep_gen(reaction, t_list):
         elif reaction.iloc[1]['mixer_type']=="CSTR":
             print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
         else:
-            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
+            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
     elif reaction.shape[0]>2:    
         if reaction.iloc[1]['mixer_type']=="T-mixer":
             print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, {t_list[1]}, prior to being""", end=" ")
