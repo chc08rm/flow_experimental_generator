@@ -18,7 +18,7 @@ def integerise(value):
         try:
             value=int(value)
         except ValueError:
-            value=input("Please enter a whole number, e.g. 0, -78, 60")  # Error message
+            value=questionary.text("Please enter a whole number, e.g. 0, -78, 60").ask()  # Error message
 def ordinal(n: int):
     if 11 <= (n % 100) <= 13:
         suffix = 'th'
@@ -34,7 +34,7 @@ def question_list():
     for n in range(pumps):
         questionary.print(f"Parameters for pump {n+1}:", style="bold italic fg:pink")
         pump_params=questionary.form(
-            reagent_id=questionary.text("Enter the SMILES string for the reagent pump delivers:"),
+            reagent_id=questionary.text(f"Enter the SMILES string for the reagent pump {n+1} delivers:"),
             reagent_eq=questionary.text("How many molar equivalents is the pump delivering? (use 1 for the limiting reagent)", validate=validate_float),
             solvent=questionary.text("Enter the SMILES string for the solvent used"),
             concentration=questionary.text("what is the reagent concentration in M?", validate=validate_float),
@@ -44,7 +44,7 @@ def question_list():
     pump_list=pd.DataFrame(pump_list)
     a=pump_list["reagent_id"].tolist()
     a.insert(0,"intermediate")
-    mixer_list=[{"mixer_loc":"null","mixer_type":"null","t_diam":"null","res_time":"null","t_bath":"null","t_inline":"null"}]
+    mixer_list=[{"mixer_loc":pd.NA,"mixer_type":pd.NA,"t_diam":pd.NA,"res_time":pd.NA,"t_ext":pd.NA,"t_int":pd.NA}]
     questionary.print("And now for the mixing elements.", style="bold italic fg:pink")
     for n in range(1,pump_list.shape[0]):
             mixer_loc=questionary.checkbox(f"what inputs does the {ordinal(n)} mixer combine? If one of them is an intermediate, choose the intermediate and intercepting reagent as options.", choices=a, validate=lambda num:  True if len(num)==2 else "Only 2 streams may be combined at a given mixing junction" ).ask()
@@ -59,14 +59,16 @@ def question_list():
                 try:
                     res_time=float(res_time)
                 except:
-                    res_time=input("Please enter a valid number: ")
-            t_bath=questionary.text("What is the bath temperature at this stage (in °C)?").ask()
-            integerise(t_bath)
-            t_inline=questionary.confirm("Did you have inline temperature data for this part of the reactor?").ask()
-            if t_inline == True:
-                t_inline=questionary.text("What is the inline temperature at this stage (in °C)?").ask()
-                integerise(t_bath)
-            mixer_params={"mixer_loc":mixer_loc, "mixer_type":mixer_type, "t_diam":t_diam, "res_time":res_time, "t_bath":t_bath, "t_inline":t_inline}
+                    res_time=questionary.text("Please enter a valid number: ").ask()
+            t_ext=questionary.text("What is the bath/block temperature at this stage (in °C)?").ask()
+            integerise(t_ext)
+            t_int=questionary.confirm("Did you have inline temperature data for this part of the reactor?").ask()
+            if t_int == True:
+                t_int=questionary.text("What is the inline temperature at this stage (in °C)?").ask()
+                integerise(t_ext)
+            else:
+                t_int=pd.NA
+            mixer_params={"mixer_loc":mixer_loc, "mixer_type":mixer_type, "t_diam":t_diam, "res_time":res_time, "t_ext":t_ext, "t_int":t_int}
             mixer_list.append(mixer_params)
     mixer_list=pd.DataFrame(mixer_list)
     questionary.print("And finally for the collection, workup conditions and yield.", style="bold italic fg:pink")
@@ -84,27 +86,37 @@ def question_list():
     else:
         aux_params["collection_mode"]="UNSPECIFIED"
     aux_params=pd.DataFrame([aux_params])
+    global reaction
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
-    reaction.to_csv(f"{filename}.csv")
-def prep_gen():
+    reaction.to_csv(f"{filename}.csv")     
+def temperature(reaction):
+    global t_list
+    t_list=[]
+    for n in range(0, reaction.shape[0]):
+        if pd.isnull(reaction.iloc[n]["t_int"]):
+            t_list.append(f"at a bath T of {reaction.iloc[n]["t_ext"]}°C")
+        else:
+            t_list.append(f"at a bath T of {reaction.iloc[n]["t_ext"]}°C, with an in-line T of {reaction.iloc[n]["t_int"]}°C")
+    t_list[0]=" "
+def prep_gen(reaction):
     print("In a flow reactor were combined",end=" ")
     print(f"""{reaction.iloc[0]["reagent_id"]} ({reaction.iloc[0]["reagent_eq"]} eq., {reaction.iloc[0]["concentration"]}M in {reaction.iloc[0]["solvent"]}) dosed in at a flow rate of {reaction.iloc[0]["flow_rate"]} mL min⁻¹ and {reaction.iloc[1]["reagent_id"]} ({reaction.iloc[1]["reagent_eq"]} eq., {reaction.iloc[1]["concentration"]}M in {reaction.iloc[1]["solvent"]}) dosed in at a flow rate of {reaction.iloc[1]["flow_rate"]} mL min⁻¹""", end=" ")
     #Mixer parameters for streams 1 and 2
     if reaction.iloc[1]['mixer_type']=="T-mixer":
-        print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, prior to being""", end=" ")
+        print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, {t_list[1]}, prior to being""", end=" ")
     elif reaction.iloc[1]['mixer_type']=="CSTR":
-        print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s, prior to being""", end=" ")
+        print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
     else:
-        print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, prior to being""", end=" ")
+        print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
     #now repeat for all other reagents and pumps in the flow. 
     for n in range(2, reaction.shape[0]):
         print(f"""combined with {reaction.iloc[n]["reagent_id"]} ({reaction.iloc[n]["reagent_eq"]} eq.,{reaction.iloc[n]["concentration"]}M in {reaction.iloc[n]["solvent"]}) dosed in at a flow rate of {reaction.iloc[n]["flow_rate"]} mL min⁻¹""", end=" ")
         if reaction.iloc[1]['mixer_type']=="T-mixer":
-            print(f"""to a {reaction.iloc[n]['mixer_type']}(φ={reaction.iloc[n]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s, prior to being""", end=" ")
+            print(f"""to a {reaction.iloc[n]['mixer_type']}(φ={reaction.iloc[n]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being""", end=" ")
         elif reaction.iloc[1]['mixer_type']=="CSTR":
-            print(f"""to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[n]['res_time']} s, prior to being""", end=" ")
+            print(f"""to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[n]['res_time']} s {t_list[n]},  prior to being""", end=" ")
         else:
-            print(f"""to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s, prior to being""", end=" ")
+            print(f"""to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being""", end=" ")
         if n==reaction.index[-1]:
             print(f"collected into {reaction.iloc[0]["collection_into"]}.")
     #And now for a statement of the collection behaviour.
@@ -117,11 +129,8 @@ def prep_gen():
                     print(f"The {reaction.iloc[n]['reagent_id']}, ", end=" ")
             print("pump(s) were initiated and run for at least 20 s prior to initiation of the limiting reagent pump.")
     #yield readout
-    if reaction.iloc[0]["product_1_yield"]>0:
+    if float(reaction.iloc[0]["product_1_yield"])>0:
         print(f"{reaction.iloc[0]["product_1_smiles"]} was obtained in {reaction.iloc[0]["product_1_yield"]}% yield by {reaction.iloc[0]["product_1_yieldtype"]} measurement.")
-#"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-#Here's the output
-#"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 start=questionary.confirm("I can take a pre-defined CSV file in a valid format and print an experimental if you have one. Do you have a pre-saved CSV file?").ask()
 if start == True:
     filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
@@ -133,4 +142,5 @@ if start == False:
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 #Here's the output
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-prep_gen()
+temperature(reaction)
+prep_gen(reaction)
