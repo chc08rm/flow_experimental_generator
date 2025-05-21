@@ -92,10 +92,10 @@ def question_list():
 def temperature(reaction):
     t_list=[]
     for n in range(0, reaction.shape[0]):
-        if pd.isnull(reaction.iloc[n]["t_int"]):
-            t_list.append(f"at a bath T of {reaction.iloc[n]["t_ext"]}°C")
+        if pd.isnull(reaction.iloc[n]['t_int']):
+            t_list.append(f"at a bath T of {reaction.iloc[n]['t_ext']}°C")
         else:
-            t_list.append(f"at a bath T of {reaction.iloc[n]["t_ext"]}°C, with an in-line T of {reaction.iloc[n]["t_int"]}°C")
+            t_list.append(f"at a bath T of {reaction.iloc[n]['t_ext']}°C, with an in-line T of {reaction.iloc[n]['t_int']}°C")
     t_list[0]=" "
     return t_list
 def prep_gen(reaction, t_list):
@@ -126,7 +126,7 @@ def prep_gen(reaction, t_list):
         else:
             print(f"""to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being""", end=" ")
         if n==reaction.index[-1]:
-            print(f"collected into {reaction.iloc[0]["collection_into"]}.")
+            print(f"collected into {reaction.iloc[0]['collection_into']}.")
     #And now for a statement of the collection behaviour.
     if reaction.iloc[0]["collection_mode"]=="STEADY_STATE":
         print("Steady state collection was performed by infusing at least 3 residence times of all feed solutions through the reactor. Yields are reported on this basis.")
@@ -138,12 +138,12 @@ def prep_gen(reaction, t_list):
             print("pump(s) were initiated and run for at least 20 s prior to initiation of the limiting reagent pump.")
     #yield readout
     if float(reaction.iloc[0]["product_1_yield"])>0:
-        print(f"{reaction.iloc[0]["product_1_smiles"]} was obtained in {reaction.iloc[0]["product_1_yield"]}% yield by {reaction.iloc[0]["product_1_yieldtype"]} measurement.")
+        print(f"{reaction.iloc[0]["product_1_smiles"]} was obtained in {reaction.iloc[0]["product_1_yield"]}% yield by {reaction.iloc[0]['product_1_yieldtype']} measurement.")
 start=questionary.confirm("I can take a pre-defined CSV file in a valid format and print an experimental if you have one. Do you have a pre-saved CSV file?").ask()
 if start == True:
     filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
-    reaction=pd.read_csv(f"{filename}")
-    while "reagent_id" not in reaction.columns:
+    reaction=pd.read_csv(f'{filename}')
+    while 'reagent_id' not in reaction.columns:
         f_name=questionary.path("This CSV is not formatted correctly. Try another file.", validate=lambda text: True if ".csv" in text           else "Please choose a valid file type.").ask()
         reaction=pd.read_csv(f"{f_name}")
 if start == False:
