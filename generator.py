@@ -99,46 +99,116 @@ def temperature(reaction):
     t_list[0]=" "
     return t_list
 def prep_gen(reaction, t_list):
-    print("In a flow reactor were combined",end=" ")
-    print(f"""{reaction.iloc[0]["reagent_id"]} ({reaction.iloc[0]["reagent_eq"]} eq., {reaction.iloc[0]["concentration"]}M in {reaction.iloc[0]["solvent"]}) dosed in at a flow rate of {reaction.iloc[0]["flow_rate"]} mL min⁻¹ and {reaction.iloc[1]["reagent_id"]} ({reaction.iloc[1]["reagent_eq"]} eq., {reaction.iloc[1]["concentration"]}M in {reaction.iloc[1]["solvent"]}) dosed in at a flow rate of {reaction.iloc[1]["flow_rate"]} mL min⁻¹""", end=" ")
-    #Mixer parameters for streams 1 and 2, with a logic to catch 2-pump streams.
-    if reaction.shape[0]==2:
-        if reaction.iloc[1]['mixer_type']=="T-mixer":
-            print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, {t_list[1]}, prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
-        elif reaction.iloc[1]['mixer_type']=="CSTR":
-            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
+    # Initialize a list to collect all description parts
+    description_parts = []
+    
+    # Initial reaction description
+    reaction_desc = (
+        f"In a flow reactor were combined {reaction.iloc[0]['reagent_id']} "
+        f"({reaction.iloc[0]['reagent_eq']} eq., {reaction.iloc[0]['concentration']}M in "
+        f"{reaction.iloc[0]['solvent']}) dosed in at a flow rate of {reaction.iloc[0]['flow_rate']} mL min⁻¹ "
+        f"and {reaction.iloc[1]['reagent_id']} ({reaction.iloc[1]['reagent_eq']} eq., "
+        f"{reaction.iloc[1]['concentration']}M in {reaction.iloc[1]['solvent']}) dosed in at a flow rate of "
+        f"{reaction.iloc[1]['flow_rate']} mL min⁻¹"
+    )
+    description_parts.append(reaction_desc)
+    
+    # Mixer parameters
+    mixer_desc = ""
+    if reaction.shape[0] == 2:
+        if reaction.iloc[1]['mixer_type'] == "T-mixer":
+            mixer_desc = (
+                f"to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). "
+                f"The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, "
+                f"{t_list[1]}, prior to being collected into {reaction.iloc[0]['collection_into']}."
+            )
+        elif reaction.iloc[1]['mixer_type'] == "CSTR":
+            mixer_desc = (
+                f"to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of "
+                f"{reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into "
+                f"{reaction.iloc[0]['collection_into']}."
+            )
         else:
-            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into {reaction.iloc[0]["collection_into"]}.""", end=" ")
-    elif reaction.shape[0]>2:    
-        if reaction.iloc[1]['mixer_type']=="T-mixer":
-            print(f"""to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, {t_list[1]}, prior to being""", end=" ")
-        elif reaction.iloc[1]['mixer_type']=="CSTR":
-            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
+            mixer_desc = (
+                f"to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of "
+                f"{reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into "
+                f"{reaction.iloc[0]['collection_into']}."
+            )
+    elif reaction.shape[0] > 2:
+        base = "to a "
+        if reaction.iloc[1]['mixer_type'] == "T-mixer":
+            base += f"{reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). "
         else:
-            print(f"""to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being""", end=" ")
-    #now repeat for all other reagents and pumps in the flow. 
+            base += f"{reaction.iloc[1]['mixer_type']}. "
+        
+        base += (
+            f"The resulting mixture was held for {'a residence time' if reaction.iloc[1]['mixer_type'] != 'CSTR' else 'an MRT'} "
+            f"of {reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being"
+        )
+        mixer_desc = base
+    
+    description_parts.append(mixer_desc)
+    
+    # Additional reagents loop
+    loop_descriptions = []
     for n in range(2, reaction.shape[0]):
-        print(f"""combined with {reaction.iloc[n]["reagent_id"]} ({reaction.iloc[n]["reagent_eq"]} eq.,{reaction.iloc[n]["concentration"]}M in {reaction.iloc[n]["solvent"]}) dosed in at a flow rate of {reaction.iloc[n]["flow_rate"]} mL min⁻¹""", end=" ")
-        if reaction.iloc[1]['mixer_type']=="T-mixer":
-            print(f"""to a {reaction.iloc[n]['mixer_type']}(φ={reaction.iloc[n]['t_diam']} µm). The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being""", end=" ")
-        elif reaction.iloc[1]['mixer_type']=="CSTR":
-            print(f"""to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for an MRT of {reaction.iloc[n]['res_time']} s {t_list[n]},  prior to being""", end=" ")
+        reagent_desc = (
+            f"combined with {reaction.iloc[n]['reagent_id']} ({reaction.iloc[n]['reagent_eq']} eq., "
+            f"{reaction.iloc[n]['concentration']}M in {reaction.iloc[n]['solvent']}) dosed in at a flow rate of "
+            f"{reaction.iloc[n]['flow_rate']} mL min⁻¹"
+        )
+        loop_descriptions.append(reagent_desc)
+        
+        mixer_part = ""
+        if reaction.iloc[n]['mixer_type'] == "T-mixer":
+            mixer_part = (
+                f"to a {reaction.iloc[n]['mixer_type']}(φ={reaction.iloc[n]['t_diam']} µm). "
+                f"The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, "
+                "prior to being"
+            )
+        elif reaction.iloc[n]['mixer_type'] == "CSTR":
+            mixer_part = (
+                f"to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for an MRT of "
+                f"{reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being"
+            )
         else:
-            print(f"""to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being""", end=" ")
-        if n==reaction.index[-1]:
-            print(f"collected into {reaction.iloc[0]['collection_into']}.")
-    #And now for a statement of the collection behaviour.
-    if reaction.iloc[0]["collection_mode"]=="STEADY_STATE":
-        print("Steady state collection was performed by infusing at least 3 residence times of all feed solutions through the reactor. Yields are reported on this basis.")
-    elif reaction.iloc[0]["collection_mode"]=="COLLECT_ALL_PRIME":
-            print("All of the output following injection of the limiting reagent was collected", end=" ")
-            for n in range (0, reaction.shape[0]):
-                if reaction.iloc[n]['reagent_eq']>1:
-                    print(f"The {reaction.iloc[n]['reagent_id']}, ", end=" ")
-            print("pump(s) were initiated and run for at least 20 s prior to initiation of the limiting reagent pump.")
-    #yield readout
-    if float(reaction.iloc[0]["product_1_yield"])>0:
-        print(f"{reaction.iloc[0]["product_1_smiles"]} was obtained in {reaction.iloc[0]["product_1_yield"]}% yield by {reaction.iloc[0]['product_1_yieldtype']} measurement.")
+            mixer_part = (
+                f"to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for a residence time of "
+                f"{reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being"
+            )
+        loop_descriptions.append(mixer_part)
+    
+        if n == reaction.index[-1]:
+            loop_descriptions.append(f"collected into {reaction.iloc[0]['collection_into']}.")
+    
+    description_parts.extend(loop_descriptions)
+    
+    # Collection mode
+    collection_desc = ""
+    if reaction.iloc[0]["collection_mode"] == "STEADY_STATE":
+        collection_desc = "Steady state collection was performed by infusing at least 3 residence times of all feed solutions through the reactor. Yields are reported on this basis."
+    elif reaction.iloc[0]["collection_mode"] == "COLLECT_ALL_PRIME":
+        prime_parts = ["All of the output following injection of the limiting reagent was collected"]
+        for n in range(0, reaction.shape[0]):
+            if reaction.iloc[n]['reagent_eq'] > 1:
+                prime_parts.append(f"The {reaction.iloc[n]['reagent_id']}, ")
+        prime_parts.append("pump(s) were initiated and run for at least 20 s prior to initiation of the limiting reagent pump.")
+        collection_desc = " ".join(prime_parts)
+    
+    description_parts.append(collection_desc)
+    
+    # Yield description
+    yield_desc = ""
+    if float(reaction.iloc[0]["product_1_yield"]) > 0:
+        yield_desc = (
+            f"{reaction.iloc[0]['product_1_smiles']} was obtained in {reaction.iloc[0]['product_1_yield']}% yield "
+            f"by {reaction.iloc[0]['product_1_yieldtype']} measurement."
+        )
+    description_parts.append(yield_desc)
+    
+    # Combine all parts into a single string
+    final_description = " ".join(description_parts)
+    return final_description
 start=questionary.confirm("I can take a pre-defined CSV file in a valid format and print an experimental if you have one. Do you have a pre-saved CSV file?").ask()
 if start == True:
     filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
@@ -152,5 +222,6 @@ if start == False:
 #Here's the output
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 t_list=temperature(reaction)
-output=prep_gen(reaction, t_list)
-print(output)
+print(prep_gen(reaction, t_list))
+with open('output.txt', "w") as f:
+    f.write(prep_gen(reaction,t_list))
