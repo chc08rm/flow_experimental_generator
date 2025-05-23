@@ -198,7 +198,7 @@ def prep_gen(reaction, t_list):
     description_parts.append(collection_desc)
     
     # Yield description
-    yield_desc = ""
+    yield_desc = "No major product was identified."
     if float(reaction.iloc[0]["product_1_yield"]) > 0:
         yield_desc = (
             f"{reaction.iloc[0]['product_1_smiles']} was obtained in {reaction.iloc[0]['product_1_yield']}% yield "
@@ -223,5 +223,5 @@ if start == False:
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 t_list=temperature(reaction)
 print(prep_gen(reaction, t_list))
-with open('output.txt', "w") as f:
+with open('output.txt', "w", encoding="utf-8") as f:
     f.write(prep_gen(reaction,t_list))
