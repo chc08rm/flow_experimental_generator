@@ -26,6 +26,23 @@ def ordinal(n: int):
         suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
     return str(n) + suffix
 def question_list():
+    def list_to_adduct(value, connector):
+        #convert to a string. for a well formatted mixer location, this is trivial.
+        value=str(value)
+        value=value.replace("['","") 
+        value=value.replace("']","") 
+        #If I want to use this to make a human-readable string, I specify "and" as an argument. 
+        if connector!="and":
+            value=value.replace(",",".")
+        else:
+            value=value.replace(","," and")
+        value=value.replace("'","")
+        return value
+    def adduct_to_list(value):
+        #makes "cartesian coordinates" from a mixer location.
+       value=[n.replace('product of reaction between ',"") for n in value]
+       value=[n.replace(' and ',".") for n in value]
+       return value
     questionary.print("Let's start with some basic pump parameters.", style="bold italic fg:pink")
     filename=questionary.text("This script writes a CSV file containing the reaction parameters for databasing and ML purposes. What would you like to call it?").ask()
     pumps=questionary.select("how many pumps are you using?", choices=["2","3","4","5"]).ask()
@@ -43,11 +60,11 @@ def question_list():
         pump_list.append(pump_params)
     pump_list=pd.DataFrame(pump_list)
     a=pump_list["reagent_id"].tolist()
-    a.insert(0,"intermediate")
     mixer_list=[{"mixer_loc":pd.NA,"mixer_type":pd.NA,"t_diam":pd.NA,"res_time":pd.NA,"t_ext":pd.NA,"t_int":pd.NA}]
     questionary.print("And now for the mixing elements.", style="bold italic fg:pink")
     for n in range(1,pump_list.shape[0]):
-            mixer_loc=questionary.checkbox(f"what inputs does the {ordinal(n)} mixer combine? If one of them is an intermediate, choose the intermediate and intercepting reagent as options.", choices=a, validate=lambda num:  True if len(num)==2 else "Only 2 streams may be combined at a given mixing junction" ).ask()
+            mixer_loc=questionary.checkbox(f"what inputs does the {ordinal(n)} mixer combine?", choices=a, validate=lambda num:  True if len(num)==2 else "Only 2 streams may be combined at a given mixing junction" ).ask()
+            a.append(f"product of reaction between {list_to_adduct(mixer_loc,'and')}")
             mixer_type=questionary.select("what type of mixer is being used?", choices=["T-mixer","chip","CSTR","fixed-bed","static"]).ask()
             if mixer_type=="T-mixer":
                 t_diam=questionary.select("what diameter is the T-piece (in uM)?", choices=["250","500","1600"]).ask()
@@ -68,6 +85,7 @@ def question_list():
                 integerise(t_ext)
             else:
                 t_int=pd.NA
+            mixer_loc=adduct_to_list(mixer_loc)
             mixer_params={"mixer_loc":mixer_loc, "mixer_type":mixer_type, "t_diam":t_diam, "res_time":res_time, "t_ext":t_ext, "t_int":t_int}
             mixer_list.append(mixer_params)
     mixer_list=pd.DataFrame(mixer_list)
