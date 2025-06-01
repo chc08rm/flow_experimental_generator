@@ -7,25 +7,25 @@ Created on Tue May  6 20:37:34 2025
 """
 import questionary
 import pandas as pd
-def validate_float(input_text):
-    try:
-        float(input_text)  # Try converting to float
-        return True  # Accept if successful
-    except ValueError:
-        return "Please enter a valid number (e.g., 3.14, -5, 1e3)."  # Error message
-def integerise(value):
-    while type(value)!=int:
-        try:
-            value=int(value)
-        except ValueError:
-            value=questionary.text("Please enter a whole number, e.g. 0, -78, 60").ask()  # Error message
-def ordinal(n: int):
-    if 11 <= (n % 100) <= 13:
-        suffix = 'th'
-    else:
-        suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
-    return str(n) + suffix
 def question_list():
+    def validate_float(input_text):
+        try:
+            input_text=float(input_text)  # Try converting to float
+            return True  # Accept if successful
+        except ValueError:
+            return "Please enter a valid number (e.g., 3.14, -5, 1e3)."  # Error message
+    def integerise(value):
+        while type(value)!=int:
+            try:
+                value=int(value)
+            except ValueError:
+                value=questionary.text("Please enter a whole number, e.g. 0, -78, 60").ask()  # Error message
+    def ordinal(n: int):#for more sylish questions
+        if 11 <= (n % 100) <= 13:
+            suffix = 'th'
+        else:
+            suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+        return str(n) + suffix
     def list_to_adduct(value, connector):
         #convert to a string. for a well formatted mixer location, this is trivial.
         value=str(value)
@@ -107,16 +107,17 @@ def question_list():
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
     reaction.to_csv(f"{filename}.csv")
     return reaction     
-def temperature(reaction):
-    t_list=[]
-    for n in range(0, reaction.shape[0]):
-        if pd.isnull(reaction.iloc[n]['t_int']):
-            t_list.append(f"at a bath T of {reaction.iloc[n]['t_ext']}°C")
-        else:
-            t_list.append(f"at a bath T of {reaction.iloc[n]['t_ext']}°C, with an in-line T of {reaction.iloc[n]['t_int']}°C")
-    t_list[0]=" "
-    return t_list
-def prep_gen(reaction, t_list):
+def prep_gen(reaction):
+    def temperature(reaction):
+        t_list=[]
+        for n in range(0, reaction.shape[0]):
+            if pd.isnull(reaction.iloc[n]['t_int']):
+                t_list.append(f"at a bath T of {reaction.iloc[n]['t_ext']}°C")
+            else:
+                t_list.append(f"at a bath T of {reaction.iloc[n]['t_ext']}°C, with an in-line T of {reaction.iloc[n]['t_int']}°C")
+        t_list[0]=" "
+        return t_list
+    t_list=temperature(reaction)
     # Initialize a list to collect all description parts
     description_parts = []
     
@@ -227,6 +228,30 @@ def prep_gen(reaction, t_list):
     # Combine all parts into a single string
     final_description = " ".join(description_parts)
     return final_description
+def dir_scanner_out(value):#value is a path.
+    import os #Import's here because you won't always need it in the execution of generator.
+    # Make a list of csvs in the working directory.
+    with os.scandir(value) as file_list:
+        csv_list=[entry.name 
+                  for entry in file_list 
+                  if '.csv' in entry.name.lower()
+                  and '.txt' not in entry.name.lower()
+                  and entry.is_file()
+                  ]
+    # Make a dictionary into which the ELN reference is the key and the prep/experimental is the value
+    directory_output={}
+    for csv in csv_list:
+        df=pd.read_csv(csv)
+        if 'reagent_id' in df.columns: #can the CSV be accepted by prep_gen?
+            #populate the dictrionary and use it to output to text files.
+            directory_output.update({csv:f'{prep_gen(df)}'})
+    for filename, prep in directory_output.items():
+        with open(f'{filename.replace(".csv",'')}.txt', "w", encoding="utf-8") as filename:
+            filename.write(f'{prep}')
+    return directory_output #and here's the dictionary if you want it.
+#"`-._,-'"`-._,-'"`-._,-'"`-._,-'
+#end definitions
+#"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 start=questionary.confirm("I can take a pre-defined CSV file in a valid format and print an experimental if you have one. Do you have a pre-saved CSV file?").ask()
 if start == True:
     filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
@@ -239,7 +264,6 @@ if start == False:
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 #Here's the output
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-t_list=temperature(reaction)
-print(prep_gen(reaction, t_list))
+print(prep_gen(reaction))
 with open('output.txt', "w", encoding="utf-8") as f:
-    f.write(prep_gen(reaction,t_list))
+    f.write(prep_gen(reaction))
