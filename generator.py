@@ -7,6 +7,7 @@ Created on Tue May  6 20:37:34 2025
 """
 import questionary
 import pandas as pd
+import argparse, os
 def question_list():
     def validate_float(input_text):
         try:
@@ -50,13 +51,26 @@ def question_list():
     pump_list=[]
     for n in range(pumps):
         questionary.print(f"Parameters for pump {n+1}:", style="bold italic fg:pink")
-        pump_params=questionary.form(
-            reagent_id=questionary.text(f"Enter the SMILES string for the reagent pump {n+1} delivers:"),
-            reagent_eq=questionary.text("How many molar equivalents is the pump delivering? (use 1 for the limiting reagent)", validate=validate_float),
-            solvent=questionary.text("Enter the SMILES string for the solvent used"),
-            concentration=questionary.text("what is the reagent concentration in M?", validate=validate_float),
-            flow_rate=questionary.text("what flow rate is this reagent being delivered at (in mL min-1)?", validate=validate_float)
-            ).ask()
+        reagent_id=questionary.text(f"Enter the SMILES string for the reagent pump {n+1} delivers:").ask()
+        lim_reagent=questionary.confirm("Is this the limiting reagent?").ask()
+        if lim_reagent==True:
+            reagent_eq=1
+        else:
+            reagent_eq=float(questionary.text("How many molar equivalents is the pump delivering?", validate=validate_float).ask())
+        solvent=questionary.text("Enter the SMILES string for the solvent used").ask()
+        concentration=float(questionary.text("what is the reagent concentration in M?", validate=validate_float).ask())
+        if lim_reagent==True:
+            flow_rate=questionary.text("what flow rate is this reagent being delivered at (in mL min-1)?", validate=validate_float).ask()
+            lim_rate=float(flow_rate)
+            lim_conc=float(concentration)
+        else:
+            try:
+                flow_rate=((lim_conc*lim_rate)/concentration)*(reagent_eq)
+                flow_rate=round(flow_rate,3)
+                print(f"The flow rate is assumed to be {flow_rate} mL min-1.")
+            except:
+                flow_rate=float(questionary.text("what flow rate is this reagent being delivered at (in mL min-1)?", validate=validate_float).ask())
+        pump_params={'reagent_id':reagent_id,'reagent_eq':reagent_eq,'solvent':solvent,'concentration':concentration,'flow_rate':flow_rate,'lim_reagent':lim_reagent}  
         pump_list.append(pump_params)
     pump_list=pd.DataFrame(pump_list)
     a=pump_list["reagent_id"].tolist()
@@ -229,7 +243,6 @@ def prep_gen(reaction):
     final_description = " ".join(description_parts)
     return final_description
 def dir_scanner_out(value):#value is a path.
-    import os #Import's here because you won't always need it in the execution of generator.
     # Make a list of csvs in the working directory.
     with os.scandir(value) as file_list:
         csv_list=[entry.name 
