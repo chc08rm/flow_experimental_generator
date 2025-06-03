@@ -122,7 +122,7 @@ def question_list():
     aux_params=pd.DataFrame([aux_params])
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
     reaction.to_csv(f"{filename}.csv")
-    return reaction     
+    return reaction,filename     
 def prep_gen(reaction):
     def temperature(reaction):
         t_list=[]
@@ -165,7 +165,7 @@ def prep_gen(reaction):
             )
         else:
             mixer_desc = (
-                f"to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for a residence time of "
+                f"to a {reaction.iloc[1]['mixer_type']} mixer. The resulting mixture was held for a residence time of "
                 f"{reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into "
                 f"{reaction.iloc[0]['collection_into']}."
             )
@@ -208,7 +208,7 @@ def prep_gen(reaction):
             )
         else:
             mixer_part = (
-                f"to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for a residence time of "
+                f"to a {reaction.iloc[n]['mixer_type']} mixer. The resulting mixture was held for a residence time of "
                 f"{reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being"
             )
         loop_descriptions.append(mixer_part)
@@ -297,6 +297,6 @@ else:
     #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
     #Here's the output
     #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-    print(prep_gen(reaction))
-    with open('output.txt', "w", encoding="utf-8") as f:
-        f.write(prep_gen(reaction))
+    print(prep_gen(reaction[0]))
+    with open(f'{reaction[1]}.txt', "w", encoding="utf-8") as f:
+        f.write(prep_gen(reaction[0]))
