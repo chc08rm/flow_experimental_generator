@@ -58,7 +58,7 @@ def question_list():
             reagent_eq=1
         else:
             reagent_eq=float(questionary.text("How many molar equivalents is the pump delivering?", validate=validate_float).ask())
-        solvent=questionary.text("Enter the SMILES string for the solvent used").ask()
+        solvent=questionary.autocomplete("Enter the SMILES string for the solvent used", choices=["C1CCOC1","CCCCCC","CC#N","C(Cl)Cl"]).ask()
         concentration=float(questionary.text("what is the reagent concentration in M?", validate=validate_float).ask())
         if lim_reagent==True:
             flow_rate=questionary.text("what flow rate is this reagent being delivered at (in mL min-1)?", validate=validate_float).ask()
