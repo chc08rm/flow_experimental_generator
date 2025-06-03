@@ -1,3 +1,0 @@
-,reagent_id,reagent_eq,solvent,concentration,flow_rate,mixer_loc,mixer_type,t_diam,res_time,t_ext,t_int,collection_into,collection_mode,product_1_smiles,product_1_yield,product_1_yieldtype
-0,CC(=O)C(C)(C)C,1,C1COCC1,0.3,2,,,,,,,dimethyl carbonate in THF,STEADY_STATE,O=C(CC(=O)OC)C(C)(C)C,82,LCMS
-1,CC(C)[N-]C(C)C.[Li+],1.2,C1COCC1,0.3,2.4,"['CC(=O)C(C)(C)C', 'CC(C)[N-]C(C)C.[Li+]']",chip,0,10.0,20,,,,,,
