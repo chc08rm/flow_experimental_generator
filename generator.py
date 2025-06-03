@@ -7,7 +7,8 @@ Created on Tue May  6 20:37:34 2025
 """
 import questionary
 import pandas as pd
-import argparse, os
+import argparse
+import os
 def question_list():
     def validate_float(input_text):
         try:
@@ -245,7 +246,7 @@ def prep_gen(reaction):
 def dir_scanner_out(value):#value is a path.
     # Make a list of csvs in the working directory.
     with os.scandir(value) as file_list:
-        csv_list=[entry.name 
+        csv_list=[os.path.abspath(entry)
                   for entry in file_list 
                   if '.csv' in entry.name.lower()
                   and '.txt' not in entry.name.lower()
@@ -259,24 +260,42 @@ def dir_scanner_out(value):#value is a path.
             #populate the dictrionary and use it to output to text files.
             directory_output.update({csv:f'{prep_gen(df)}'})
     for filename, prep in directory_output.items():
-        with open(f'{filename.replace(".csv",'')}.txt', "w", encoding="utf-8") as filename:
+        with open(f"{filename.replace('.csv','')}.txt", "w", encoding="utf-8") as filename:
             filename.write(f'{prep}')
     return directory_output #and here's the dictionary if you want it.
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
 #end definitions
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-start=questionary.confirm("I can take a pre-defined CSV file in a valid format and print an experimental if you have one. Do you have a pre-saved CSV file?").ask()
-if start == True:
-    filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
-    reaction=pd.read_csv(f'{filename}')
-    while 'reagent_id' not in reaction.columns:
-        f_name=questionary.path("This CSV is not formatted correctly. Try another file.", validate=lambda text: True if ".csv" in text           else "Please choose a valid file type.").ask()
-        reaction=pd.read_csv(f"{f_name}")
-if start == False:
-    reaction=question_list()
-#"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-#Here's the output
-#"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-print(prep_gen(reaction))
-with open('output.txt', "w", encoding="utf-8") as f:
-    f.write(prep_gen(reaction))
+parser = argparse.ArgumentParser(description='Program with interactive/non-interactive modes')
+parser.add_argument('-n', '--non-interactive', 
+                    nargs='?',         # Capture 0 or 1 arguments
+                    const=os.getcwd(),        # Default value when flag is used without argument
+                    default=None,      # Value when flag is not used
+                    metavar='DIRECTORY',  # Display name for argument in help
+                    help='Enable non-interactive mode. Optionally specify directory (default: "./")')
+
+args = parser.parse_args()
+
+if args.non_interactive is not None:
+    # Non-interactive mode
+    directory = args.non_interactive
+    print(f"Running in non-interactive mode with directory: {directory}")
+    dir_scanner_out(directory)
+    print("Done!")
+else:
+    # Interactive mode
+    start=questionary.confirm("I can take a pre-defined CSV file in a valid format and print an experimental if you have one. Do you have a pre-saved CSV file?").ask()
+    if start == True:
+        filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
+        reaction=pd.read_csv(f'{filename}')
+        while 'reagent_id' not in reaction.columns:
+            f_name=questionary.path("This CSV is not formatted correctly. Try another file.", validate=lambda text: True if ".csv" in text           else "Please choose a valid file type.").ask()
+            reaction=pd.read_csv(f"{f_name}")
+    if start == False:
+        reaction=question_list()
+    #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
+    #Here's the output
+    #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
+    print(prep_gen(reaction))
+    with open('output.txt', "w", encoding="utf-8") as f:
+        f.write(prep_gen(reaction))
