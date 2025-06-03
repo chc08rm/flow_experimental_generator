@@ -1,4 +1,0 @@
-,reagent_id,reagent_eq,solvent,concentration,flow_rate,mixer_loc,mixer_type,t_diam,res_time,t_ext,t_int,collection_into,collection_mode,product_1_smiles,product_1_yield,product_1_yieldtype
-0,C1=C(Br)C(=C(Br)C=C1)O,1,C1COCC1,0.3,17,,,,,,,1M HCl,STEADY_STATE,C1=C(Br)C(=C(C=C1)B(O)O)O,66,Weight
-1,CCCCCC[Li],2.2,CCCCCCC,2.3,4.88,"['C1=C(Br)C(=C(Br)C=C1)O', 'CCCCCC[Li]']",T-mixer,500,1.0,-25,-15,,,,,
-2,COB(OC)OC,2.4,C1COCC1,2,6.12,"['intermediate', 'COB(OC)OC']",T-mixer,500,1.0,-25,,,,,,
