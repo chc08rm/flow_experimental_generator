@@ -2,7 +2,7 @@
 
 ## In brief:
 
-This is a Python script built on questionary and pandas, which asks the user a series of questions to generate:
+This is a Python script built on [questionary](https://pypi.org/project/questionary/) and [pandas](https://pypi.org/project/pandas/) that asks the user a series of questions to generate:
 
 *   A human readable flow chemistry experimental for use in a lab notebook
 *   A CSV file containing reaction parameters relevant to a flow chemist; this may be used for databasing reactions, or machine learning applications.
