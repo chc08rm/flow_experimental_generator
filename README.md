@@ -19,7 +19,8 @@ If you already have a CSV file from a previous round of answering the questions,
 
 The precedure for writing an experimental looks like this:
 
-![demo](https://github.com/user-attachments/assets/4229fac5-2365-4146-9515-2d398d0c81ea)
+![demo](https://github.com/user-attachments/assets/339e24d2-d983-438b-af15-b4fe65b8c981)
+
 
 The CSV (with your chosen name) and a text file called "output.txt," are saved in your working directory.
 
