@@ -29,4 +29,6 @@ The CSV (with your chosen name) and a text file called "output.txt," are saved i
   python generator.py -n your_directory_here
 ```
 
-Non-interactive mode takes a directory containing generator-compatible csv files and outputs text files containing an experimental write-up.
+Non-interactive mode takes a directory containing generator-compatible csv files and outputs text files containing an experimental write-up. 
+
+If you want, you can make generator compatible csv files using the included examples as templates, which may save you some time.
