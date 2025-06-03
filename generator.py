@@ -50,10 +50,11 @@ def question_list():
     pumps=questionary.select("how many pumps are you using?", choices=["2","3","4","5"]).ask()
     pumps=int(pumps)
     pump_list=[]
+    lim_rate=None
     for n in range(pumps):
         questionary.print(f"Parameters for pump {n+1}:", style="bold italic fg:pink")
         reagent_id=questionary.text(f"Enter the SMILES string for the reagent pump {n+1} delivers:").ask()
-        lim_reagent=questionary.confirm("Is this the limiting reagent?").ask()
+        lim_reagent=questionary.confirm("Is this the limiting reagent?").skip_if(lim_rate).ask()
         if lim_reagent==True:
             reagent_eq=1
         else:
