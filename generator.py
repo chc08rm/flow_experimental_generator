@@ -121,7 +121,6 @@ def question_list():
         aux_params["collection_mode"]="UNSPECIFIED"
     aux_params=pd.DataFrame([aux_params])
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
-    reaction.to_csv(f"{filename}.csv")
     return reaction,filename     
 def prep_gen(reaction):
     def temperature(reaction):
@@ -298,5 +297,6 @@ else:
     #Here's the output
     #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
     print(prep_gen(reaction[0]))
+    reaction.to_csv(f"{reaction[1]}.csv")
     with open(f'{reaction[1]}.txt', "w", encoding="utf-8") as f:
         f.write(prep_gen(reaction[0]))
