@@ -82,11 +82,11 @@ def question_list():
         pump_list.append(pump_params)
     pump_list=pd.DataFrame(pump_list)
     a=pump_list["reagent_id"].tolist()
-    mixer_list=[{"mixer_loc":pd.NA,"mixer_type":pd.NA,"t_diam":pd.NA,"res_time":pd.NA,"t_ext":pd.NA,"t_int":pd.NA, "PRESSURE_REGULATOR":pd.NA, "pressure_psi":pd.NA}]
+    mixer_list=[{"mixer_loc":pd.NA,"mixer_type":pd.NA,"t_diam":pd.NA,"res_time":pd.NA,"t_ext":pd.NA,"t_int":pd.NA, "pressure_regulator":pd.NA, "pressure_psi":pd.NA}]
     questionary.print("And now for the mixing elements.", style="bold italic fg:pink")
-    PRESSURE_REGULATOR=questionary.confirm("Was a back pressure regulator attached to the reactor output?").ask()
-    mixer_list[0]["PRESSURE_REGULATOR"]=PRESSURE_REGULATOR
-    if PRESSURE_REGULATOR:
+    pressure_regulator=questionary.confirm("Was a back pressure regulator attached to the reactor output?").ask()
+    mixer_list[0]["pressure_regulator"]=pressure_regulator
+    if pressure_regulator:
         pressure_psi=questionary.text("What pressure (in psi) was the regulator set to?", validate=validate_integer).ask()
         mixer_list[0]["pressure_psi"]=int(pressure_psi)
     for n in range(1,pump_list.shape[0]):
@@ -170,20 +170,22 @@ def prep_gen(reaction):
             mixer_desc = (
                 f"to a {reaction.iloc[1]['mixer_type']}(φ={reaction.iloc[1]['t_diam']} µm). "
                 f"The resulting mixture was held for a residence time of {reaction.iloc[1]['res_time']} s, "
-                f"{t_list[1]}, prior to being collected into {reaction.iloc[0]['collection_into']}."
+                f"{t_list[1]}. "
             )
         elif reaction.iloc[1]['mixer_type'] == "CSTR":
             mixer_desc = (
                 f"to a {reaction.iloc[1]['mixer_type']}. The resulting mixture was held for an MRT of "
-                f"{reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into "
-                f"{reaction.iloc[0]['collection_into']}."
+                f"{reaction.iloc[1]['res_time']} s {t_list[1]}. "
             )
         else:
             mixer_desc = (
                 f"to a {reaction.iloc[1]['mixer_type']} mixer. The resulting mixture was held for a residence time of "
-                f"{reaction.iloc[1]['res_time']} s {t_list[1]}, prior to being collected into "
-                f"{reaction.iloc[0]['collection_into']}."
+                f"{reaction.iloc[1]['res_time']} s {t_list[1]}. "
             )
+        if reaction.iloc[0]['pressure_regulator']:
+            mixer_desc+=f"""A back pressure regulator set to {reaction.iloc[0]['pressure_psi']} psi was attached to the reactor output line and the output was collected into {reaction.iloc[0]['collection_into']}."""
+        else:
+            mixer_desc+=f"prior to being collected into {reaction.iloc[0]['collection_into']}."
     elif reaction.shape[0] > 2:
         base = "to a "
         if reaction.iloc[1]['mixer_type'] == "T-mixer":
@@ -213,37 +215,39 @@ def prep_gen(reaction):
         if reaction.iloc[n]['mixer_type'] == "T-mixer":
             mixer_part = (
                 f"to a {reaction.iloc[n]['mixer_type']}(φ={reaction.iloc[n]['t_diam']} µm). "
-                f"The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, "
-                "prior to being"
+                f"The resulting mixture was held for a residence time of {reaction.iloc[n]['res_time']} s {t_list[n]}, "  
             )
         elif reaction.iloc[n]['mixer_type'] == "CSTR":
             mixer_part = (
                 f"to a {reaction.iloc[n]['mixer_type']}. The resulting mixture was held for an MRT of "
-                f"{reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being"
+                f"{reaction.iloc[n]['res_time']} s {t_list[n]},"
             )
         else:
             mixer_part = (
                 f"to a {reaction.iloc[n]['mixer_type']} mixer. The resulting mixture was held for a residence time of "
-                f"{reaction.iloc[n]['res_time']} s {t_list[n]}, prior to being"
+                f"{reaction.iloc[n]['res_time']} s {t_list[n]},"
             )
+        mixer_part+="prior to being"
         loop_descriptions.append(mixer_part)
     
         if n == reaction.index[-1]:
-            loop_descriptions.append(f"collected into {reaction.iloc[0]['collection_into']}.")          
+            if reaction.iloc[0]['pressure_regulator']:
+                 loop_descriptions.append(f"passed through a back pressure regulator set to {reaction.iloc[0]["pressure_psi"]} psi. The output was collected into {reaction.iloc[0]['collection_into']}.")
+            else:
+                loop_descriptions.append(f"collected into {reaction.iloc[0]['collection_into']}.")          
     description_parts.extend(loop_descriptions)
     
     # Collection mode
     collection_desc = ""
     if reaction.iloc[0]["collection_mode"] == "STEADY_STATE":
-        collection_desc = "Steady state collection was performed by infusing at least 3 residence times of all feed solutions through the reactor. Yields are reported on this basis."
+        collection_desc += "Steady state collection was performed by infusing at least 3 residence times of all feed solutions through the reactor. Yields are reported on this basis."
     elif reaction.iloc[0]["collection_mode"] == "COLLECT_ALL_PRIME":
-        prime_parts = ["All of the output following injection of the limiting reagent was collected"]
+        prime_parts = [f"All of the output was collected following initiation of the {reaction.loc[reaction['lim_reagent'] == True, 'reagent_id'].squeeze()} pump. The"]
         for n in range(0, reaction.shape[0]):
             if reaction.iloc[n]['reagent_eq'] > 1:
-                prime_parts.append(f"The {reaction.iloc[n]['reagent_id']}, ")
-        prime_parts.append("pump(s) were initiated and run for at least 20 s prior to initiation of the limiting reagent pump.")
+                prime_parts.append(f"{reaction.iloc[n]['reagent_id']}, ")
+        prime_parts.append(f"pump(s) were initiated and run for at least 20 s prior to initiation of the {reaction.loc[reaction['lim_reagent'] == True, 'reagent_id'].squeeze()} pump.")
         collection_desc = " ".join(prime_parts)
-    
     description_parts.append(collection_desc)
     
     # Yield description
@@ -254,7 +258,6 @@ def prep_gen(reaction):
             f"by {reaction.iloc[0]['product_1_yieldtype']} measurement."
         )
     description_parts.append(yield_desc)
-    
     # Combine all parts into a single string
     final_description = " ".join(description_parts)
     return final_description
