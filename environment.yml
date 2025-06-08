@@ -1,0 +1,10 @@
+name: generator-build
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pandas
+  - questionary
+  - pyinstaller 
+
