@@ -10,12 +10,18 @@ import pandas as pd
 import argparse
 import os
 def question_list():
-    def validate_float(input_text):
+    def validate_float(value):
         try:
-            input_text=float(input_text)  # Try converting to float
+            input_text=float(value)  # Try converting to float
             return True  # Accept if successful
         except ValueError:
             return "Please enter a valid number (e.g., 3.14, -5, 1e3)."  # Error message
+    def validate_integer(value):
+        try:
+            input_text=int(value)  # Try converting to float
+            return True  # Accept if successful
+        except ValueError:
+            return "Please enter a whole number, e.g. 0, -78, 60"  # Error message
     def integerise(value):
         while type(value)!=int:
             try:
@@ -59,7 +65,7 @@ def question_list():
             reagent_eq=1
         else:
             reagent_eq=float(questionary.text("How many molar equivalents is the pump delivering?", validate=validate_float).ask())
-        solvent=questionary.autocomplete("Enter the SMILES string for the solvent used", choices=["C1CCOC1","CCCCCC","CC#N","C(Cl)Cl"]).ask()
+        solvent=questionary.autocomplete("Enter the SMILES string for the solvent used", choices=["C1CCOC1","CCCCCC","CC#N","C(Cl)Cl"], meta_information={"C1CCOC1":"THF","CCCCCC":"Hexane","CC#N":"MeCN","C(Cl)Cl":"DCM"}, match_middle=True).ask()
         concentration=float(questionary.text("what is the reagent concentration in M?", validate=validate_float).ask())
         if lim_reagent==True:
             flow_rate=questionary.text("what flow rate is this reagent being delivered at (in mL min-1)?", validate=validate_float).ask()
@@ -76,8 +82,13 @@ def question_list():
         pump_list.append(pump_params)
     pump_list=pd.DataFrame(pump_list)
     a=pump_list["reagent_id"].tolist()
-    mixer_list=[{"mixer_loc":pd.NA,"mixer_type":pd.NA,"t_diam":pd.NA,"res_time":pd.NA,"t_ext":pd.NA,"t_int":pd.NA}]
+    mixer_list=[{"mixer_loc":pd.NA,"mixer_type":pd.NA,"t_diam":pd.NA,"res_time":pd.NA,"t_ext":pd.NA,"t_int":pd.NA, "PRESSURE_REGULATOR":pd.NA, "pressure_psi":pd.NA}]
     questionary.print("And now for the mixing elements.", style="bold italic fg:pink")
+    PRESSURE_REGULATOR=questionary.confirm("Was a back pressure regulator attached to the reactor output?").ask()
+    mixer_list[0]["PRESSURE_REGULATOR"]=PRESSURE_REGULATOR
+    if PRESSURE_REGULATOR:
+        pressure_psi=questionary.text("What pressure (in psi) was the regulator set to?", validate=validate_integer).ask()
+        mixer_list[0]["pressure_psi"]=int(pressure_psi)
     for n in range(1,pump_list.shape[0]):
             mixer_loc=questionary.checkbox(f"what inputs does the {ordinal(n)} mixer combine?", choices=a, validate=lambda num:  True if len(num)==2 else "Only 2 streams may be combined at a given mixing junction" ).ask()
             a.append(f"product of reaction between {list_to_adduct(mixer_loc,'and')}")
@@ -85,7 +96,7 @@ def question_list():
             if mixer_type=="T-mixer":
                 t_diam=questionary.select("what diameter is the T-piece (in uM)?", choices=["250","500","1600"]).ask()
             else:
-                t_diam=0
+                t_diam=pd.NA
             res_time=questionary.text("what residence time is the combined stream held for (in seconds)?").ask()
             #something is up with the async library, hence the explicit loop here. 
             while type(res_time)!=float:
@@ -93,11 +104,11 @@ def question_list():
                     res_time=float(res_time)
                 except:
                     res_time=questionary.text("Please enter a valid number: ").ask()
-            t_ext=questionary.text("What is the bath/block temperature at this stage (in °C)?").ask()
+            t_ext=questionary.text("What is the bath/block temperature at this stage (in °C)?", validate=validate_integer).ask()
             integerise(t_ext)
             t_int=questionary.confirm("Did you have inline temperature data for this part of the reactor?").ask()
             if t_int == True:
-                t_int=questionary.text("What is the inline temperature at this stage (in °C)?").ask()
+                t_int=questionary.text("What is the inline temperature at this stage (in °C)?", validate=validate_integer).ask()
                 integerise(t_ext)
             else:
                 t_int=pd.NA
@@ -108,17 +119,22 @@ def question_list():
     questionary.print("And finally for the collection, workup conditions and yield.", style="bold italic fg:pink")
     aux_params=questionary.form(
         collection_into=questionary.text("What did you collect into? e.g. NH₄Cl, an inerted vial, etc."),
+        run_time=questionary.text("How long did you collect for (in mins)? Leave at 0 if you didn't record a time.", default='0', validate=validate_integer),
         collection_mode=questionary.select("What mode of collection did you use?", choices=["""Steady state — wait for at least 3   residence times of material to be passed through the reactor before collecting""", """Collecting all — collect all of the injectable quantity of limiting reagent after excess reagent lines have been primed""","Unknown"]),
         product_1_smiles=questionary.text("Please enter the SMILES string for the major product obtained. If you don't know what it was (e.g. a complex mixture was formed), leave this blank."),
         product_1_yield=questionary.text("What was your yield?", validate=validate_float),
-        product_1_yieldtype=questionary.select("How was this yield determined?", choices=["Weight","LCMS", "1H NMR", "Titration"])
+        product_1_yieldtype=questionary.select("How was this yield determined?", choices=["Weight","LCMS", "1H NMR", "Titration"]),
+        additional_info=questionary.text("""Add any other details you think are relevant, for instance the use of an untrasonic bath, or pre-drying of the reagents. These will appear in the experimental unchanged. Leave blank if none.""", default="N/A")
     ).ask()
+    # A bit of post processing
     if "Steady" in aux_params["collection_mode"]: 
         aux_params["collection_mode"]="STEADY_STATE"
     elif "Collecting" in aux_params["collection_mode"]:
         aux_params["collection_mode"]="COLLECT_ALL_PRIME"
     else:
         aux_params["collection_mode"]="UNSPECIFIED"
+    if aux_params['run_time']!=None:
+        integerise(aux_params['run_time'])
     aux_params=pd.DataFrame([aux_params])
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
     return reaction,filename     
@@ -213,8 +229,7 @@ def prep_gen(reaction):
         loop_descriptions.append(mixer_part)
     
         if n == reaction.index[-1]:
-            loop_descriptions.append(f"collected into {reaction.iloc[0]['collection_into']}.")
-    
+            loop_descriptions.append(f"collected into {reaction.iloc[0]['collection_into']}.")          
     description_parts.extend(loop_descriptions)
     
     # Collection mode
@@ -297,6 +312,6 @@ else:
     #Here's the output
     #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
     print(prep_gen(reaction[0]))
-    reaction.to_csv(f"{reaction[1]}.csv")
+    reaction[0].to_csv(f"{reaction[1]}.csv")
     with open(f'{reaction[1]}.txt', "w", encoding="utf-8") as f:
         f.write(prep_gen(reaction[0]))
