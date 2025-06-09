@@ -155,9 +155,9 @@ def prep_gen(reaction):
     # Initial reaction description
     reaction_desc = (
         f"In a flow reactor were combined {reaction.iloc[0]['reagent_id']} "
-        f"({reaction.iloc[0]['reagent_eq']} eq., {reaction.iloc[0]['concentration']}M in "
+        f"({(reaction.iloc[0]['concentration']*reaction.iloc[0]['flow_rate']*reaction.iloc[0]['run_time'])} mol, {reaction.iloc[0]['reagent_eq']} eq., {reaction.iloc[0]['concentration']}M in "
         f"{reaction.iloc[0]['solvent']}) dosed in at a flow rate of {reaction.iloc[0]['flow_rate']} mL min⁻¹ "
-        f"and {reaction.iloc[1]['reagent_id']} ({reaction.iloc[1]['reagent_eq']} eq., "
+        f"and {reaction.iloc[1]['reagent_id']} ({(reaction.iloc[1]['concentration']*reaction.iloc[1]['flow_rate']*reaction.iloc[0]['run_time'])} mol, {reaction.iloc[1]['reagent_eq']} eq., "
         f"{reaction.iloc[1]['concentration']}M in {reaction.iloc[1]['solvent']}) dosed in at a flow rate of "
         f"{reaction.iloc[1]['flow_rate']} mL min⁻¹"
     )
@@ -205,7 +205,7 @@ def prep_gen(reaction):
     loop_descriptions = []
     for n in range(2, reaction.shape[0]):
         reagent_desc = (
-            f"combined with {reaction.iloc[n]['reagent_id']} ({reaction.iloc[n]['reagent_eq']} eq., "
+            f"combined with {reaction.iloc[n]['reagent_id']} ({(reaction.iloc[n]['concentration']*(reaction.iloc[n]['flow_rate'])*(reaction.iloc[0]['run_time']))} mol, {reaction.iloc[n]['reagent_eq']} eq., "
             f"{reaction.iloc[n]['concentration']}M in {reaction.iloc[n]['solvent']}) dosed in at a flow rate of "
             f"{reaction.iloc[n]['flow_rate']} mL min⁻¹"
         )
