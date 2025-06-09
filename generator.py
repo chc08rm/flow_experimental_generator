@@ -283,7 +283,7 @@ def dir_scanner_out(value):#value is a path.
             #populate the dictrionary and use it to output to text files.
             directory_output.update({csv:f'{prep_gen(df)}'})
     for filename, prep in directory_output.items():
-        with open(f"{value}/{filename.replace('.csv','')}.txt", "w", encoding="utf-8") as filename:
+        with open(f"{filename.replace('.csv','')}.txt", "w", encoding="utf-8") as filename:
             filename.write(f'{prep}')
     return directory_output #and here's the dictionary if you want it.
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
