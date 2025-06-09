@@ -119,12 +119,11 @@ def question_list():
     questionary.print("And finally for the collection, workup conditions and yield.", style="bold italic fg:pink")
     aux_params=questionary.form(
         collection_into=questionary.text("What did you collect into? e.g. NH₄Cl, an inerted vial, etc."),
-        run_time=questionary.text("How long did you collect for (in mins)? Leave at 0 if you didn't record a time.", default='0', validate=validate_integer),
+        run_time=questionary.text("How long did you collect for (in mins)? Leave at 0 if you didn't record a time.", default='0', validate=validate_float),
         collection_mode=questionary.select("What mode of collection did you use?", choices=["""Steady state — wait for at least 3   residence times of material to be passed through the reactor before collecting""", """Collecting all — collect all of the injectable quantity of limiting reagent after excess reagent lines have been primed""","Unknown"]),
         product_1_smiles=questionary.text("Please enter the SMILES string for the major product obtained. If you don't know what it was (e.g. a complex mixture was formed), leave this blank."),
         product_1_yield=questionary.text("What was your yield?", validate=validate_float),
         product_1_yieldtype=questionary.select("How was this yield determined?", choices=["Weight","LCMS", "1H NMR", "Titration"]),
-        additional_info=questionary.text("""Add any other details you think are relevant, for instance the use of an untrasonic bath, or pre-drying of the reagents. These will appear in the experimental unchanged. Leave blank if none.""", default="N/A")
     ).ask()
     # A bit of post processing
     if "Steady" in aux_params["collection_mode"]: 
@@ -134,7 +133,7 @@ def question_list():
     else:
         aux_params["collection_mode"]="UNSPECIFIED"
     if aux_params['run_time']!=None:
-        integerise(aux_params['run_time'])
+        (aux_params['run_time'])=float(aux_params['run_time'])
     aux_params=pd.DataFrame([aux_params])
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
     return reaction,filename     
@@ -149,15 +148,21 @@ def prep_gen(reaction):
         t_list[0]=" "
         return t_list
     t_list=temperature(reaction)
+    def mole_maker(n):
+        run_time=float(reaction.iloc[0]['run_time'])
+        conc=float(reaction.iloc[n]['concentration'])
+        flow_rate=float(reaction.iloc[n]['flow_rate'])
+        mmoles=round(conc*run_time*flow_rate, 2)
+        return mmoles
     # Initialize a list to collect all description parts
     description_parts = []
     
     # Initial reaction description
     reaction_desc = (
         f"In a flow reactor were combined {reaction.iloc[0]['reagent_id']} "
-        f"({(reaction.iloc[0]['concentration']*reaction.iloc[0]['flow_rate']*reaction.iloc[0]['run_time'])} mol, {reaction.iloc[0]['reagent_eq']} eq., {reaction.iloc[0]['concentration']}M in "
+        f"({mole_maker(0)} mmol, {reaction.iloc[0]['reagent_eq']} eq., {reaction.iloc[0]['concentration']}M in "
         f"{reaction.iloc[0]['solvent']}) dosed in at a flow rate of {reaction.iloc[0]['flow_rate']} mL min⁻¹ "
-        f"and {reaction.iloc[1]['reagent_id']} ({(reaction.iloc[1]['concentration']*reaction.iloc[1]['flow_rate']*reaction.iloc[0]['run_time'])} mol, {reaction.iloc[1]['reagent_eq']} eq., "
+        f"and {reaction.iloc[1]['reagent_id']} ({mole_maker(1)} mmol, {reaction.iloc[1]['reagent_eq']} eq., "
         f"{reaction.iloc[1]['concentration']}M in {reaction.iloc[1]['solvent']}) dosed in at a flow rate of "
         f"{reaction.iloc[1]['flow_rate']} mL min⁻¹"
     )
@@ -205,7 +210,7 @@ def prep_gen(reaction):
     loop_descriptions = []
     for n in range(2, reaction.shape[0]):
         reagent_desc = (
-            f"combined with {reaction.iloc[n]['reagent_id']} ({(reaction.iloc[n]['concentration']*(reaction.iloc[n]['flow_rate'])*(reaction.iloc[0]['run_time']))} mol, {reaction.iloc[n]['reagent_eq']} eq., "
+            f"combined with {reaction.iloc[n]['reagent_id']} ({mole_maker(n)} mmol, {reaction.iloc[n]['reagent_eq']} eq., "
             f"{reaction.iloc[n]['concentration']}M in {reaction.iloc[n]['solvent']}) dosed in at a flow rate of "
             f"{reaction.iloc[n]['flow_rate']} mL min⁻¹"
         )
@@ -232,7 +237,7 @@ def prep_gen(reaction):
     
         if n == reaction.index[-1]:
             if reaction.iloc[0]['pressure_regulator']:
-                 loop_descriptions.append(f"passed through a back pressure regulator set to {reaction.iloc[0]["pressure_psi"]} psi. The output was collected into {reaction.iloc[0]['collection_into']}.")
+                 loop_descriptions.append(f"passed through a back pressure regulator set to {reaction.iloc[0]['pressure_psi']} psi. The output was collected into {reaction.iloc[0]['collection_into']}.")
             else:
                 loop_descriptions.append(f"collected into {reaction.iloc[0]['collection_into']}.")          
     description_parts.extend(loop_descriptions)
@@ -278,7 +283,7 @@ def dir_scanner_out(value):#value is a path.
             #populate the dictrionary and use it to output to text files.
             directory_output.update({csv:f'{prep_gen(df)}'})
     for filename, prep in directory_output.items():
-        with open(f"{filename.replace('.csv','')}.txt", "w", encoding="utf-8") as filename:
+        with open(f"{value}/{filename.replace('.csv','')}.txt", "w", encoding="utf-8") as filename:
             filename.write(f'{prep}')
     return directory_output #and here's the dictionary if you want it.
 #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
@@ -296,25 +301,23 @@ args = parser.parse_args()
 
 if args.non_interactive is not None:
     # Non-interactive mode
-    directory = args.non_interactive
+    directory = os.path.abspath(args.non_interactive)
     print(f"Running in non-interactive mode with directory: {directory}")
     dir_scanner_out(directory)
     print("Done!")
 else:
     # Interactive mode
     start=questionary.confirm("I can take a pre-defined CSV file in a valid format and print an experimental if you have one. Do you have a pre-saved CSV file?").ask()
-    if start == True:
+    if start:
         filename=questionary.path("Choose a valid file:", validate=lambda text: True if ".csv" in text else "Please choose a valid file type.").ask()
         reaction=pd.read_csv(f'{filename}')
         while 'reagent_id' not in reaction.columns:
             f_name=questionary.path("This CSV is not formatted correctly. Try another file.", validate=lambda text: True if ".csv" in text           else "Please choose a valid file type.").ask()
             reaction=pd.read_csv(f"{f_name}")
+        print(prep_gen(reaction))
     if start == False:
         reaction=question_list()
-    #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-    #Here's the output
-    #"`-._,-'"`-._,-'"`-._,-'"`-._,-'
-    print(prep_gen(reaction[0]))
-    reaction[0].to_csv(f"{reaction[1]}.csv")
-    with open(f'{reaction[1]}.txt', "w", encoding="utf-8") as f:
-        f.write(prep_gen(reaction[0]))
+        print(prep_gen(reaction[0]))
+        reaction[0].to_csv(f"{os.getcwd()}/{reaction[1]}.csv")
+        with open(f'{os.getcwd()}/{reaction[1]}.txt', "w", encoding="utf-8") as f:
+            f.write(prep_gen(reaction[0]))

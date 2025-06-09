@@ -1,4 +1,4 @@
-,reagent_id,reagent_eq,solvent,concentration,flow_rate,lim_reagent,mixer_loc,mixer_type,t_diam,res_time,t_ext,t_int,collection_into,collection_mode,product_1_smiles,product_1_yield,product_1_yieldtype
-0,C1(Cl)=CC(=C(Br)C=N1)Cl,1.0,C1CCOC1,0.3,17,True,,,,,,,NH4Cl,STEADY_STATE,N1C(Cl)=CC(=C(C=1)[Si](C)(C)C)Cl,70,1H NMR
-1,CCCCCC[Li],1.1,CCCCCC,2.3,2.439,False,"['C1(Cl)=CC(=C(Br)C=N1)Cl', 'CCCCCC[Li]']",T-mixer,500,1.0,-70,-50,,,,,
-2,C[Si](C)(Cl)C,1.2,C1CCOC1,1.0,6.12,False,"['C[Si](C)(Cl)C', 'C1(Cl)=CC(=C(Br)C=N1)Cl.CCCCCC[Li]']",T-mixer,500,6.0,-70,,,,,,
+,reagent_id,reagent_eq,solvent,concentration,flow_rate,lim_reagent,mixer_loc,mixer_type,t_diam,res_time,t_ext,t_int,pressure_regulator,pressure_psi,collection_into,run_time,collection_mode,product_1_smiles,product_1_yield,product_1_yieldtype,additional_info
+0,N1C=C(Cl)C(=CC=1Cl)Br,1.0,C1CCOC1,0.3,17,True,,,,,,,False,20,sat. NH4Cl,0,COLLECT_ALL_PRIME,N1C=C(C(=CC=1Cl)[Si](C)(C)C)Cl,77,Weight,N/A
+1,CCCCCC[Li],1.1,C1CCOC1,2.3,2.439,,"['N1C=C(Cl)C(=CC=1Cl)Br', 'CCCCCC[Li]']",T-mixer,500,1.0,-50,-20,,,,,,,,,
+2,C[Si](Cl)(C)C,1.2,C1CCOC1,1.0,6.12,,"['C[Si](Cl)(C)C', 'N1C=C(Cl)C(=CC=1Cl)Br.CCCCCC[Li]']",T-mixer,500,6.0,-50,,,,,,,,,,
