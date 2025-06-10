@@ -2,7 +2,7 @@
 
 ## In brief:
 
-This is a Python script built on [questionary](https://pypi.org/project/questionary/) and [pandas](https://pypi.org/project/pandas/) that asks the user a series of questions to generate:
+This is a Python script built on [questionary](https://pypi.org/project/questionary/) and [pandas](https://pypi.org/project/pandas/) that asks the user a series of questions to help generate:
 
 *   A human readable flow chemistry experimental for use in a lab notebook
 *   A CSV file containing reaction parameters relevant to a flow chemist; this may be used for databasing reactions, or machine learning applications.
@@ -19,10 +19,9 @@ If you already have a CSV file from a previous round of answering the questions,
 
 The precedure for writing an experimental looks like this:
 
-![demo](https://github.com/user-attachments/assets/339e24d2-d983-438b-af15-b4fe65b8c981)
+![Peek 2025-06-10 23-43](https://github.com/user-attachments/assets/ec783f72-c65b-48a4-9adf-0c891bffa6f2)
 
-
-The CSV (with your chosen name) and a text file called "output.txt," are saved in your working directory.
+The CSV (with your chosen name) and an accompanying text file with the terminal output are saved in your working directory.
 
 ### For non-interactive mode:
 
