@@ -118,13 +118,12 @@ def question_list():
     mixer_list=pd.DataFrame(mixer_list)
     questionary.print("And finally for the collection, workup conditions and yield.", style="bold italic fg:pink")
     aux_params=questionary.form(
-        collection_into=questionary.text("What was your isolation procedure? Write this part as as you would a normal experimental."),
+        collection_into=questionary.text("What did you collect into? e.g. NH₄Cl, an inerted vial, etc."),
         run_time=questionary.text("How long did you collect for (in mins)? Leave at 0 if you didn't record a time.", default='0', validate=validate_float),
         collection_mode=questionary.select("What mode of collection did you use?", choices=["""Steady state — wait for at least 3   residence times of material to be passed through the reactor before collecting""", """Collecting all — collect all of the injectable quantity of limiting reagent after excess reagent lines have been primed""","Unknown"]),
         product_1_smiles=questionary.text("Please enter the SMILES string for the major product obtained. If you don't know what it was (e.g. a complex mixture was formed), leave this blank."),
-        product_1_yield=questionary.text("What was your yield (or conversion)?", validate=validate_float),
+        product_1_yield=questionary.text("What was your yield?", validate=validate_float),
         product_1_yieldtype=questionary.select("How was this yield determined?", choices=["Weight","LCMS", "1H NMR", "Titration"]),
-        additional_info=questionary.autocomplete("Add in any additional comments here. You may also add your analytical data.", match_middle=True, choices=["Ultrasonication was used throughout the run to minimise fouling.", "Where appropriate, reagent solutions were pre-dried."])
     ).ask()
     # A bit of post processing
     if "Steady" in aux_params["collection_mode"]: 
@@ -264,10 +263,6 @@ def prep_gen(reaction):
             f"by {reaction.iloc[0]['product_1_yieldtype']} measurement."
         )
     description_parts.append(yield_desc)
-    additional_info=""
-    if reaction.iloc[0]["additional_info"] is not None:
-        additional_info=reaction.iloc[0]["additional_info"]
-    description_parts.append(additional_info)
     # Combine all parts into a single string
     final_description = " ".join(description_parts)
     return final_description
