@@ -1,4 +1,4 @@
-# Flow Experimental Generator
+# Flow Chemistry Experimental Generator
 
 ## In brief:
 
