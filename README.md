@@ -48,3 +48,5 @@ The second is a CSV file with columns capturing key parameters. For some users i
 
 The CSV fields are documented here:
 
+[csv-example.pdf](https://github.com/user-attachments/files/20747763/csv-example.pdf)
+
