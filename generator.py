@@ -129,7 +129,8 @@ def question_list():
         run_time=questionary.text("How long did you collect for (in mins)? Leave at 0 if you didn't record a time.", default='0', validate=validate_float),
         collection_mode=questionary.select("What mode of collection did you use?", choices=["""Steady state — wait for at least 3   residence times of material to be passed through the reactor before collecting""", """Collecting all — collect all of the injectable quantity of limiting reagent after excess reagent lines have been primed""","Unknown"]),
         product_1_smiles=questionary.text("Please enter the SMILES string for the major product obtained. If you don't know what it was (e.g. a complex mixture was formed), leave this blank."),
-        product_1_yield=questionary.text("What was your yield (or conversion)?", validate=validate_float),
+        product_1_yield=questionary.text("What was your yield (or conversion)? If no product was obtained, leave this blank" , validate=validate_float, default=0),
+        product_1_metric=questionary.select("was this an isolated yield or conversion?", choices=['Yield','Conversion']),
         product_1_yieldtype=questionary.select("How was this yield determined?", choices=["Weight","LCMS", "1H NMR", "Titration"]),
         additional_info=questionary.autocomplete("Add in any additional comments here. You may also add your analytical data.", match_middle=True, choices=["Ultrasonication was used throughout the run to minimise fouling.", "Where appropriate, reagent solutions were pre-dried."])
     ).ask()
@@ -142,6 +143,10 @@ def question_list():
         aux_params["collection_mode"]="UNSPECIFIED"
     if aux_params['run_time']!=None:
         (aux_params['run_time'])=float(aux_params['run_time'])
+    if "Yield" == aux_params["product_1_metric"]: 
+        aux_params["product_1_metric"]="Y"
+    if "Conversion" == aux_params["product_1_metric"]: 
+        aux_params["product_1_metric"]="C"
     aux_params=pd.DataFrame([aux_params])
     reaction=pd.concat([pump_list,mixer_list,aux_params], axis=1)
     return reaction,filename     
