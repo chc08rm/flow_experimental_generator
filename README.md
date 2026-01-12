@@ -2,6 +2,8 @@
 
 © 2025 Raminder S. Mulla. Released under the MIT License. 
 
+NB: A more fully featured, user friendly implmenetation of this concept is avaiable over at [James Cochrane's repo.](https://github.com/JamesCochraneFlow/FlowChemistryTool)
+
 ## In brief:
 
 This is a Python script built on [questionary](https://pypi.org/project/questionary/) and [pandas](https://pypi.org/project/pandas/) that asks the user a series of questions to help generate:
