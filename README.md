@@ -2,7 +2,7 @@
 
 © 2025 Raminder S. Mulla. Released under the MIT License. 
 
-NB: A more fully featured, user friendly implmenetation of this concept is avaiable over at [James Cochrane's repo.](https://github.com/JamesCochraneFlow/FlowChemistryTool)
+NB: A more fully featured, user friendly implmenetation of this concept is available over at [James Cochrane's repo.](https://github.com/JamesCochraneFlow/FlowChemistryTool)
 
 ## In brief:
 
